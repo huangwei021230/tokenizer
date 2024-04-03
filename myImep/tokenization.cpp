@@ -1,6 +1,3 @@
-//
-// Created by PC on 2024/4/3.
-//
 #pragma once
 
 #include "tokenization.h"
@@ -12,6 +9,7 @@
 #include <unordered_map>
 #include <memory>
 #include <map>
+#define ll long long
 
 namespace Tokenizer{
     const std::unordered_map<std::wstring, std::wstring> VOCAB_FILES_NAMES = {
@@ -79,41 +77,28 @@ namespace Tokenizer{
     }
 
 
-
-class GPT2Tokenizer{
-public:
-    GPT2Tokenizer(
-            const std::wstring &vocab_file,
-            const std::wstring &merges_file,
-            const size_t &vocab_size,
-            const size_t &n_special,
-            const std::wstring &unk_token,
-            const std::wstring &bos_token= L"<|endoftext|>",
-            const std::wstring &eos_token= L"<|endoftext|>",
-            const std::wstring &pad_token= L"",
-            const bool &add_prefix_space=false,
-            const bool &add_bos_token=false)
-    {
-        // initialize encoder and decoder
-        std::map<std::string, std::string> encoder;
-        std::ifstream vocab_handle(vocab_file);
-        if (vocab_handle.is_open()) {
-            std::string line;
-            while (std::getline(vocab_handle, line)) {
-                size_t delimiter_pos = line.find('\t');
-                if (delimiter_pos != std::string::npos) {
-                    std::string token = line.substr(0, delimiter_pos);
-                    std::string id = line.substr(delimiter_pos + 1);
-                    encoder[id] = token;
-                }
+GPT2Tokenizer::GPT2Tokenizer(const std::wstring &vocab_file, const std::wstring &merges_file,
+                                        const size_t &vocab_size, const size_t &n_special,
+                                        const std::wstring &unk_token, const std::wstring &bos_token,
+                                        const std::wstring &eos_token, const std::wstring &pad_token,
+                                        const bool &add_prefix_space, const bool &add_bos_token) {
+    // initialize encoder and decoder
+    std::map<std::string, std::string> encoder;
+    std::ifstream vocab_handle(vocab_file);
+    if (vocab_handle.is_open()) {
+        std::string line;
+        while (std::getline(vocab_handle, line)) {
+            size_t delimiter_pos = line.find('\t');
+            if (delimiter_pos != std::string::npos) {
+                std::string token = line.substr(0, delimiter_pos);
+                std::string id = line.substr(delimiter_pos + 1);
+                encoder[id] = token;
             }
-            vocab_handle.close();
         }
-
-
-    };
-
-
-};
+        vocab_handle.close();
+    }
+}
 
 }
+
+

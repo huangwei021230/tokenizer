@@ -14,14 +14,13 @@
 #include <memory>
 // #include <boost/algorithm/string.hpp>
 #include <utf8proc.h>
+#include <map>
 
 const std::wstring stripChar = L" \t\n\r\f\v";
 using Vocab = std::unordered_map<std::wstring, size_t>;
 using InvVocab = std::unordered_map<size_t , std::wstring>;
 
 namespace tokenizer {
-static const std::unordered_map<std::wstring, std::wstring> VOCAB_FILES_NAMES;
-static const std::unordered_map<std::wstring, size_t> PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES;
 
 
 
@@ -40,6 +39,13 @@ public:
             const std::wstring &pad_token = L"",
             const bool &add_prefix_space = false,
             const bool &add_bos_token = false);
+    std::vector<std::wstring> tokenize(const std::wstring &text) const;
+
+private:
+    std::shared_ptr<Vocab> mVocab;
+    std::shared_ptr<InvVocab> mInvVocab;
+    std::map<std::string, std::string> encoder;
+    std::map<std::string, std::string> decoder;
 };
 
 static std::wstring convertToUnicode(const std::string &text) {

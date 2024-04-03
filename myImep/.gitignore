@@ -1,4 +1,5 @@
 pytorch_model.bin
 cmake-build-debug
 .idea
-arm64-v8a
+libs/arm64-v8a
+libs/x86_64

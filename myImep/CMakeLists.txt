@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.4.1)
 project(OPT)
 
 set(CMAKE_CXX_STANDARD 17)
+# TODO: need to be changed
+set(LINK_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libs/amd64)
+
 
 set(UTF8PROC_INCLUDE_PATH include/utf8proc)
 set(NLOHMANN_JSON_INCLUDE_PATH include)
@@ -14,11 +17,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 file(GLOB SOURCES ${SOURCE_DIR}/*.cpp "${SOURCE_DIR}/*.c")
 
-#if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
-    add_executable(opt ${SOURCES})
-    set(UTF8PROC_LIBRARY libs/arm64-v8a/libutf8proc.so)
+MESSAGE(CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR})
 
-    #UTF8PROC
-    MESSAGE(UTF8PROC_LIBRARY: ${UTF8PROC_LIBRARY})
-    target_link_libraries(opt ${UTF8PROC_LIBRARY})
+#if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
+add_executable(opt ${SOURCES})
+set(UTF8PROC_LIBRARY "${LINK_DIRS}/libutf8proc.so.2.3.2")
+
+#UTF8PROC
+MESSAGE(UTF8PROC_LIBRARY: ${UTF8PROC_LIBRARY})
+target_link_libraries(opt ${UTF8PROC_LIBRARY})
 #endif()

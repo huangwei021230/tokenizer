@@ -11,7 +11,8 @@
 #include <memory>
 #include <algorithm>
 #include <map>
-
+#include <locale>
+#include <codecvt>
 #define ll long long
 
 namespace tokenizer{
@@ -83,21 +84,21 @@ namespace tokenizer{
     }
 
     // deal with json Vocab
-    std::shared_ptr<Vocab> loadVocab(const std::string &vocabFile) {
-        std::shared_ptr<Vocab> vocab(new Vocab);
-        size_t index = 0;
-        std::ifstream ifs(vocabFile, std::ifstream::in);
-        std::string line;
-        while (getline(ifs, line)) {
-            std::wstring token = convertToUnicode(line);
-            if (token.empty())
-                break;
-            token = strip(token);
-            (*vocab)[token] = index;
-            index++;
-        }
-        return vocab;
-    }
+//    std::shared_ptr<Vocab> loadVocab(const std::string &vocabFile) {
+//        std::shared_ptr<Vocab> vocab(new Vocab);
+//        size_t index = 0;
+//        std::ifstream ifs(vocabFile, std::ifstream::in);
+//        std::string line;
+//        while (getline(ifs, line)) {
+//            std::wstring token = convertToUnicode(line);
+//            if (token.empty())
+//                break;
+//            token = strip(token);
+//            (*vocab)[token] = index;
+//            index++;
+//        }
+//        return vocab;
+//    }
 
 
 
@@ -114,7 +115,15 @@ namespace tokenizer{
             const bool &add_bos_token)
      {
         // initialize encoder and decoder
-        std::ifstream file(vocab_file.c_str());
+         std::locale loc("");
+         // 创建一个 wstring 到字符串转换器
+         std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+         // 使用转换器将 wstring 转换为字符串
+         std::string str = converter.to_bytes(vocab_file);
+        std::cout<< "vocab_file: " << str << std::endl;
+        std::filesystem::path absolute_path = std::filesystem::absolute(str);
+        std::cout<< "absolute_path: " << absolute_path << std::endl;
+        std::ifstream file(absolute_path);
         if(!file.is_open()) {
             std::cerr << "Error opening file " << std::endl;
             exit(1);

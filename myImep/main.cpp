@@ -4,7 +4,7 @@
 #include "tokenization.h"
 
 int main(){
-    tokenizer::GPT2Tokenizer tokenizer(L"vocab.json", L"merges.txt", 1024, 0, L"<unk>");
+    tokenizer::GPT2Tokenizer tokenizer(L"../vocab.json", L"merges.txt", 1024, 0, L"<unk>");
 
     std::wstring text = L"Hello, my dog is cute";
 //    std::vector<std::wstring> tokens = tokenizer.tokenize(text);

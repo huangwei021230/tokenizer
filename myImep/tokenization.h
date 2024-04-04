@@ -11,19 +11,28 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 // #include <boost/algorithm/string.hpp>
 #include <utf8proc.h>
 #include <map>
-
+// hash for pair<char,char>
+struct pair_hash {
+    inline std::size_t operator()(const std::pair<char,char> & v) const {
+        return v.first*31+v.second;
+    }
+};
+// strings
 const std::wstring stripChar = L" \t\n\r\f\v";
+
+// typedef
 using Vocab = std::unordered_map<std::wstring, size_t>;
 using InvVocab = std::unordered_map<size_t , std::wstring>;
 
 namespace tokenizer {
 
 
-
+static std::vector<std::wstring> split(const std::wstring &text);
 
 
 class GPT2Tokenizer {
@@ -41,7 +50,7 @@ public:
             const bool &add_bos_token = false);
     std::vector<std::wstring> tokenize(const std::wstring &text) const;
     std::wstring bpe(const std::wstring &token);
-    std::vector<std::wstring> get_pairs(const std::wstring &token) const;
+    std::unordered_set<std::pair<char, char>, pair_hash> get_pairs(const std::wstring &word);
 private:
     std::shared_ptr<Vocab> mVocab;
     std::shared_ptr<InvVocab> mInvVocab;
@@ -79,6 +88,8 @@ static std::string convertFromUnicode(const std::wstring &wText) {
     }
     return ret;
 }
+
+
 
 };
 

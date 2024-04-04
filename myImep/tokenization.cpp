@@ -25,6 +25,31 @@ namespace tokenizer{
             {L"facebook/opt-125m", 1024},
     };
 
+    std::vector<std::wstring> split(const std::wstring &text) {
+        std::vector<std::wstring> result;
+        size_t pos = 0, found;
+        while ((found = text.find_first_not_of(stripChar, pos)) != std::wstring::npos) {
+            pos = text.find_first_of(stripChar, found);
+            if (pos == std::wstring::npos) {
+                result.push_back(text.substr(found));
+                break;
+            }
+            result.push_back(text.substr(found, pos - found));
+        }
+        return result;
+    }
+
+    std::vector<std::string> split(const std::string &text) {
+        std::vector<std::string> result;
+        size_t pos = 0, found;
+        std::istringstream ir(text);
+        std::string buffer;
+        while(std::getline(ir, buffer, ' ')) {
+            result.push_back(buffer);
+        }
+        return result;
+    }
+
     std::map<size_t , char> bytes_to_unicode() {
         std::vector<int> bs;
         std::vector<int> cs;
@@ -54,6 +79,7 @@ namespace tokenizer{
 //        }
         return byte_unicode_map;
     }
+
 
 
     std::wstring strip(const std::wstring &text) {
@@ -137,7 +163,12 @@ namespace tokenizer{
 
         // deal with merge.txt
         std::filesystem::path absolute_path_merges = std::filesystem::absolute(merges_file);
-        std::ifstream file_merges(absolute_path_merges);
+        std::ifstream file_merges(absolute_path_merges, std::ios::in | std::ios::binary);
+        // open file encoding = utf-8
+        file_merges.imbue(std::locale(file_merges.getloc(), new std::codecvt_utf8<wchar_t>));
+
+
+        // TODO: transform this into Unicode form
         std::vector<std::string> bpe_merges;
         if(!file_merges.is_open()) {
             std::cerr << "Error opening file " << std::endl;
@@ -159,29 +190,83 @@ namespace tokenizer{
         if (!bpe_merges.empty() && bpe_merges.back().empty()) {
             bpe_merges.pop_back();
         }
+        file_merges.close();
 
 
-
-
-
-    }
-
-    std::wstring GPT2Tokenizer::bpe(const std::wstring &token){
-        if(cache.find(token) != cache.end()) {
-            return cache[token];
+        // tuple
+        std::vector<std::vector<std::string>> bpe_merge_words;
+        for(const auto &line : bpe_merges) {
+            std::vector<std::string> merge = tokenizer::split(line);
+            bpe_merge_words.push_back(merge);
         }
-        std::wstring word = token;
-        auto pairs = get_pairs(word);
+
+        size_t count = 0;
+        for(const auto &merge_set : bpe_merge_words) {
+            std::cout << count << ": ";
+            for(const auto &word : merge_set) {
+                std::cout << word << " ";
+            }
+            count++;
+            std::cout << std::endl;
+        }
 
     }
+
+//    std::wstring GPT2Tokenizer::bpe(const std::wstring &token){
+//        if(cache.find(token) != cache.end()) {
+//            return cache[token];
+//        }
+//        std::wstring word = token;
+//        auto pairs = get_pairs(word);
+//        if(pairs.empty()) {
+//            return token;
+//        }
+//        while (true) {
+//            auto it = std::min_element(pairs.begin(), pairs.end(), [this](const auto& pair1, const auto& pair2) {
+//                return bpe_ranks[pair1] < bpe_ranks[pair2];
+//            });
+//            auto bigram = *it;
+//            if (bpe_ranks.find(bigram.first + bigram.second) == bpe_ranks.end()) {
+//                break;
+//            }
+//            std::string new_word;
+//            size_t i = 0;
+//            while (i < word.size()) {
+//                auto j = word.find(bigram.first, i);
+//                if (j == std::string::npos) {
+//                    new_word.append(word.substr(i));
+//                    break;
+//                }
+//                new_word.append(word.substr(i, j - i));
+//                i = j;
+//                if (word[i] == bigram.first[0] && i < word.size() - 1 && word[i + 1] == bigram.second[0]) {
+//                    new_word.append(bigram.first + bigram.second);
+//                    i += 2;
+//                } else {
+//                    new_word.push_back(word[i]);
+//                    ++i;
+//                }
+//            }
+//            word = new_word;
+//            if (word.size() == 1) {
+//                break;
+//            } else {
+//                pairs = get_pairs(word);
+//            }
+//        }
+//        cache[token] = word;
+//        return word;
+//    }
+
+
     std::vector<std::wstring> GPT2Tokenizer::tokenize(const std::wstring &text) const {
         std::vector<std::wstring> bpe_tokens;
 
         return {};
     }
 
-    std::unordered_set<std::pair<char, char>> get_pairs(const std::string& word) {
-        std::unordered_set<std::pair<char, char>> pairs;
+    std::unordered_set<std::pair<char, char>, pair_hash> GPT2Tokenizer::get_pairs(const std::wstring& word){
+        std::unordered_set<std::pair<char, char>, pair_hash> pairs;
         char prev_char = word[0];
         for (size_t i = 1; i < word.size(); ++i) {
             char current_char = word[i];

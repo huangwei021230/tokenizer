@@ -2,17 +2,17 @@ cmake_minimum_required(VERSION 3.4.1)
 project(OPT)
 
 set(CMAKE_CXX_STANDARD 17)
-# TODO: need to be changed
-#set(LINK_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libs/amd64)
 
+set(LINK_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libs/amd64)
 
-set(UTF8PROC_INCLUDE_PATH include/utf8proc)
-set(NLOHMANN_JSON_INCLUDE_PATH include)
+MESSAGE(LINK_DIRS: ${LINK_DIRS})
+
+set(UTF8PROC_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/include/utf8proc)
+set(NLOHMANN_JSON_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}
-                    ${UTF8PROC_INCLUDE_PATH}
-                    ${NLOHMANN_JSON_INCLUDE_PATH})
-
+        ${UTF8PROC_INCLUDE_PATH}
+        ${NLOHMANN_JSON_INCLUDE_PATH})
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 file(GLOB SOURCES ${SOURCE_DIR}/*.cpp "${SOURCE_DIR}/*.c")
@@ -20,12 +20,13 @@ file(GLOB SOURCES ${SOURCE_DIR}/*.cpp "${SOURCE_DIR}/*.c")
 MESSAGE(CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR})
 
 #if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
-add_executable(opt ${SOURCES})
-#set(UTF8PROC_LIBRARY "${LINK_DIRS}/libutf8proc.so.2.3.2")
+    add_executable(opt ${SOURCES})
 
-#UTF8PROC
+    # 设置动态库导入库路径
+    set(UTF8PROC_LIBRARY "${LINK_DIRS}/utf8proc.lib")
+    MESSAGE(UTF8PROC_LIBRARY: ${UTF8PROC_LIBRARY})
 
-
-#MESSAGE(UTF8PROC_LIBRARY: ${UTF8PROC_LIBRARY})
-target_link_libraries(opt ${UTF8PROC_LIBRARY})
+    # 链接静态库到目标
+    target_link_libraries(opt PUBLIC ${UTF8PROC_LIBRARY})
 #endif()
+

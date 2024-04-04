@@ -24,45 +24,37 @@ namespace tokenizer{
             {L"facebook/opt-125m", 1024},
     };
 
-//    std::map<int, char> bytes_to_unicode() {
-//        std::vector<int> bs;
-//        std::vector<int> cs;
-//        /**
-//         *      Returns list of utf-8 byte and a mapping to unicode strings. We specifically avoids mapping to whitespace/control
-//                characters the bpe code barfs on.
-//
-//                The reversible bpe codes work on unicode strings. This means you need a large # of unicode characters in your vocab
-//                if you want to avoid UNKs. When you're at something like a 10B token dataset you end up needing around 5K for
-//                decent coverage. This is a significant percentage of your normal, say, 32K bpe vocab. To avoid that, we want lookup
-//                tables between utf-8 bytes and unicode strings.
-//         */
-//        for (int i = static_cast<int>('!'); i <= static_cast<int>('~'); ++i)
-//            bs.push_back(i);
-//
-//        for (int i = static_cast<int>('¡'); i <= static_cast<int>('¬'); ++i)
-//            bs.push_back(i);
-//
-//        for (int i = static_cast<int>('®'); i <= static_cast<int>('ÿ'); ++i)
-//            bs.push_back(i);
-//
-//        cs = bs;
-//
-//        int n = 0;
-//        for (int b = 0; b < 256; ++b) {
-//            if (std::find(bs.begin(), bs.end(), b) == bs.end()) {
-//                bs.push_back(b);
-//                cs.push_back(256 + n);
-//                ++n;
-//            }
-//        }
-//
-//        std::map<int, char> result;
-//        for (size_t i = 0; i < bs.size(); ++i) {
-//            result[bs[i]] = static_cast<char>(cs[i]);
-//        }
-//
-//        return result;
-//    }
+    std::map<size_t , char> bytes_to_unicode() {
+        std::vector<int> bs;
+        std::vector<int> cs;
+        for (unsigned char i = '!'; i <= '~'; ++i) {
+            bs.push_back(i);
+        }
+        for (wchar_t i = L'¡'; i <= L'¬'; ++i) {
+            bs.push_back(i);
+        }
+        for (wchar_t i = L'®'; i <= L'ÿ'; ++i) {
+            bs.push_back(i);
+        }
+        cs = bs;
+        int n = 0;
+        for (int b = 0; b < (1 << 8); ++b) {
+            if (std::find(bs.begin(), bs.end(), b) == bs.end()) {
+                bs.push_back(b);
+                cs.push_back((1 << 8) + n);
+                n += 1;
+            }
+        }
+
+        std::map<size_t , char> byte_unicode_map;
+        for (size_t i = 0; i < bs.size(); ++i) {
+            byte_unicode_map[bs[i]] = static_cast<char>(cs[i]);
+            std::cout<< bs[i] << " " << cs[i] << std::endl;
+        }
+
+        return byte_unicode_map;
+    }
+
 
     std::wstring strip(const std::wstring &text) {
         std::wstring ret = text;
@@ -83,22 +75,23 @@ namespace tokenizer{
         return ret;
     }
 
-    // deal with json Vocab
-//    std::shared_ptr<Vocab> loadVocab(const std::string &vocabFile) {
-//        std::shared_ptr<Vocab> vocab(new Vocab);
-//        size_t index = 0;
-//        std::ifstream ifs(vocabFile, std::ifstream::in);
-//        std::string line;
-//        while (getline(ifs, line)) {
-//            std::wstring token = convertToUnicode(line);
-//            if (token.empty())
-//                break;
-//            token = strip(token);
-//            (*vocab)[token] = index;
-//            index++;
-//        }
-//        return vocab;
-//    }
+
+//     deal with json Vocab
+    std::shared_ptr<Vocab> loadVocab(const std::string &vocabFile) {
+        std::shared_ptr<Vocab> vocab(new Vocab);
+        size_t index = 0;
+        std::ifstream ifs(vocabFile, std::ifstream::in);
+        std::string line;
+        while (getline(ifs, line)) {
+            std::wstring token = convertToUnicode(line);
+            if (token.empty())
+                break;
+            token = strip(token);
+            (*vocab)[token] = index;
+            index++;
+        }
+        return vocab;
+    }
 
 
 
@@ -112,17 +105,13 @@ namespace tokenizer{
             const std::wstring &eos_token,
             const std::wstring &pad_token,
             const bool &add_prefix_space,
-            const bool &add_bos_token)
-     {
+            const bool &add_bos_token){
         // initialize encoder and decoder
-         std::locale loc("");
-         // 创建一个 wstring 到字符串转换器
-         std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-         // 使用转换器将 wstring 转换为字符串
-         std::string str = converter.to_bytes(vocab_file);
+        std::locale loc("");
+        std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+        std::string str = converter.to_bytes(vocab_file);
         std::cout<< "vocab_file: " << str << std::endl;
         std::filesystem::path absolute_path = std::filesystem::absolute(str);
-        std::cout<< "absolute_path: " << absolute_path << std::endl;
         std::ifstream file(absolute_path);
         if(!file.is_open()) {
             std::cerr << "Error opening file " << std::endl;
@@ -137,9 +126,12 @@ namespace tokenizer{
         }
         file.close();
         encoder = j;
-        for(const auto & [key, value]: encoder) {
-            std::cout << key << " : " << value << std::endl;
+        for(const auto &[key, value] : encoder) {
+            decoder[value] = key;
         }
+
+        byte_encoder = bytes_to_unicode();
+
     }
 
     std::vector<std::wstring> GPT2Tokenizer::tokenize(const std::wstring &text) const {

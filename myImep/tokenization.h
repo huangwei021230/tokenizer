@@ -40,7 +40,8 @@ public:
             const bool &add_prefix_space = false,
             const bool &add_bos_token = false);
     std::vector<std::wstring> tokenize(const std::wstring &text) const;
-
+    std::wstring bpe(const std::wstring &token);
+    std::vector<std::wstring> get_pairs(const std::wstring &token) const;
 private:
     std::shared_ptr<Vocab> mVocab;
     std::shared_ptr<InvVocab> mInvVocab;
@@ -48,6 +49,8 @@ private:
     std::map<std::size_t , std::string> decoder;
     std::map<std::size_t, char> byte_encoder;
     std::map<char, std::size_t> byte_decoder;
+    std::unordered_map<std::string, std::size_t> bpe_ranks;
+    std::unordered_map<std::wstring, std::wstring> cache;
 };
 
 static std::wstring convertToUnicode(const std::string &text) {

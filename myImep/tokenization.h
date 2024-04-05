@@ -59,8 +59,8 @@ private:
     std::shared_ptr<InvVocab> mInvVocab;
     std::map<std::string, std::size_t> encoder;
     std::map<std::size_t , std::string> decoder;
-    std::map<std::size_t, char> byte_encoder;
-    std::map<char, std::size_t> byte_decoder;
+    std::map<std::size_t, wchar_t> byte_encoder;
+    std::map<wchar_t, std::size_t> byte_decoder;
     std::map<std::vector<std::wstring>, std::size_t> bpe_ranks;
     std::unordered_map<std::wstring, std::wstring> cache;
     std::regex pat;

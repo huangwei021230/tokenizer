@@ -15,6 +15,7 @@
 #include <map>
 #include <locale>
 #include <codecvt>
+#include <iomanip>
 // #include <boost/regex.hpp>
 #define ll long long
 
@@ -52,7 +53,7 @@ namespace tokenizer{
         return result;
     }
 
-    std::map<size_t , char> bytes_to_unicode() {
+    std::map<size_t , wchar_t> bytes_to_unicode() {
         std::vector<int> bs;
         std::vector<int> cs;
         for (unsigned char i = '!'; i <= '~'; ++i) {
@@ -74,12 +75,12 @@ namespace tokenizer{
             }
         }
 
-        std::map<size_t , char> byte_unicode_map;
-//        for (size_t i = 0; i < bs.size(); ++i) {
-//            byte_unicode_map[bs[i]] = static_cast<char>(cs[i]);
-//            std::cout<< bs[i] << " " << cs[i] << std::endl;
-//        }
-        return byte_unicode_map;
+        std::map<size_t , wchar_t> byte_unicode_map;
+       for (size_t i = 0; i < bs.size(); ++i) {
+           byte_unicode_map[bs[i]] = static_cast<wchar_t>(cs[i]);
+       }
+
+       return byte_unicode_map;
     }
 
 
@@ -282,12 +283,25 @@ namespace tokenizer{
         while (std::regex_search(start, end, match, pat)) {
             // Update the start iterator to search for next match
             std::string utf8_token = match.str();
-            bpe_tokens.push_back(convertToUnicode(utf8_token));
             start = match[0].second;
+            std::wstringstream result;
+            for (char c : utf8_token) {  
+                if (byte_encoder.find(c) != byte_encoder.end()) {
+                    auto it = byte_encoder.find(static_cast<size_t>(c));
+                    result << it->second;
+                }
+                else
+                {
+                    result << static_cast<wchar_t>(c);
+                }
+            }
+            std::cout << convertFromUnicode(result.str()) << std::endl;
         }
-        return bpe_tokens;
 
         
+        return bpe_tokens;
+
+
     }
 
     std::unordered_set<std::pair<char, char>, pair_hash> GPT2Tokenizer::get_pairs(const std::wstring& word){

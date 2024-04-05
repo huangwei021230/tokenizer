@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <regex>
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
@@ -34,11 +35,7 @@ namespace tokenizer {
 
 static std::vector<std::wstring> split(const std::wstring &text);
 
-class AutoTokenizer{
-public:
-    AutoTokenizer(const std::string &tokenizer_json_file);
 
-};
 class GPT2Tokenizer {
 public:
     GPT2Tokenizer(
@@ -62,8 +59,9 @@ private:
     std::map<std::size_t , std::string> decoder;
     std::map<std::size_t, char> byte_encoder;
     std::map<char, std::size_t> byte_decoder;
-    std::map<std::vector<std::string>, std::size_t> bpe_ranks;
-    std::unordered_map<std::string, std::string> cache;
+    std::map<std::vector<std::wstring>, std::size_t> bpe_ranks;
+    std::unordered_map<std::wstring, std::wstring> cache;
+    std::wregex pat;
 };
 
 static std::wstring convertToUnicode(const std::string &text) {

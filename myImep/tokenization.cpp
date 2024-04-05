@@ -4,6 +4,7 @@
 #include "nlohmann/json.hpp"
 #include <iostream>
 #include <fstream>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -133,6 +134,7 @@ namespace tokenizer{
             const bool &add_prefix_space,
             const bool &add_bos_token){
 
+        
         // initialize encoder and decoder
         std::filesystem::path absolute_path = std::filesystem::absolute(vocab_file);
         std::ifstream file(absolute_path);
@@ -184,12 +186,8 @@ namespace tokenizer{
             }
             // check if line is not empty before adding, to mimic Python's split("\n")[1:-1]
             if (!line.empty()) {
-                if(((wchar_t) line[0]) == L'臓') {
-                    bpe_merges.push_back(line.substr(1));
-                } else {
-                    // remove the first space
-                    bpe_merges.push_back(line);
-                }
+                // remove the first space
+                bpe_merges.push_back(line);
             }
         }
         if (!bpe_merges.empty() && bpe_merges.back().empty()) {
@@ -197,73 +195,95 @@ namespace tokenizer{
         }
         file_merges.close();
 
+
         // tuple
-        std::vector<std::vector<std::string>> bpe_merge_words;
+        std::vector<std::vector<std::wstring>> bpe_merge_words;
         for(const auto &line : bpe_merges) {
             std::wstring wline = convertToUnicode(line);
-            std::vector<std::wstring> merge = tokenizer::split(wline);
-            for(auto & word : merge) {
-                std::wcout<< word << std::endl;
-            }
+            std::vector<std::wstring> words = split(wline);
+            bpe_merge_words.push_back(words);
         }
 
         for(int i = 0;i< bpe_merge_words.size(); ++i) {
             bpe_ranks[bpe_merge_words[i]] = i;
         }
 
+        // for(auto & a : bpe_ranks) {
+        //     std::wcout << a.first[0] << " " << a.first[1] << " " << a.second << std::endl;
+        // }
+
+        // regex
+        std::wregex pat(L"'s|'t|'re|'ve|'m|'ll|'d| ?[[:alpha:]]+| ?[[:digit:]]+| ?[^\\s[:alpha:][:digit:]]+|\\s+(?!\\S)|\\s+");
+        
+
+
+
     }
 
-//    std::wstring GPT2Tokenizer::bpe(const std::wstring &token){
-//        if(cache.find(token) != cache.end()) {
-//            return cache[token];
-//        }
-//        std::wstring word = token;
-//        auto pairs = get_pairs(word);
-//        if(pairs.empty()) {
-//            return token;
-//        }
-//        while (true) {
-//            auto it = std::min_element(pairs.begin(), pairs.end(), [this](const auto& pair1, const auto& pair2) {
-//                return bpe_ranks[pair1] < bpe_ranks[pair2];
-//            });
-//            auto bigram = *it;
-//            if (bpe_ranks.find(bigram.first + bigram.second) == bpe_ranks.end()) {
-//                break;
-//            }
-//            std::string new_word;
-//            size_t i = 0;
-//            while (i < word.size()) {
-//                auto j = word.find(bigram.first, i);
-//                if (j == std::string::npos) {
-//                    new_word.append(word.substr(i));
-//                    break;
-//                }
-//                new_word.append(word.substr(i, j - i));
-//                i = j;
-//                if (word[i] == bigram.first[0] && i < word.size() - 1 && word[i + 1] == bigram.second[0]) {
-//                    new_word.append(bigram.first + bigram.second);
-//                    i += 2;
-//                } else {
-//                    new_word.push_back(word[i]);
-//                    ++i;
-//                }
-//            }
-//            word = new_word;
-//            if (word.size() == 1) {
-//                break;
-//            } else {
-//                pairs = get_pairs(word);
-//            }
-//        }
-//        cache[token] = word;
-//        return word;
-//    }
+    // std::wstring GPT2Tokenizer::bpe(const std::wstring &token){
+    //         if(cache.find(token) != cache.end()) {
+    //             return cache[token];
+    //         }
+    //         std::vector<wchar_t> word;
+    //         for(auto &c : token) {
+    //             word.push_back(c);
+    //         }
+    //         auto pairs = get_pairs(word);
+    //         if(pairs.empty()) {
+    //             return token;
+    //         }
+    //         while (true) {
+    //             auto it = std::min_element(pairs.begin(), pairs.end(), [this](const auto& pair1, const auto& pair2) {
+    //                 return bpe_ranks[pair1] < bpe_ranks[pair2];
+    //             });
+    //             auto bigram = *it;
+    //             if (bpe_ranks.find(bigram.first + bigram.second) == bpe_ranks.end()) {
+    //                 break;
+    //             }
+    //             std::string new_word;
+    //             size_t i = 0;
+    //             while (i < word.size()) {
+    //                 auto j = word.find(bigram.first, i);
+    //                 if (j == std::string::npos) {
+    //                     new_word.append(word.substr(i));
+    //                     break;
+    //                 }
+    //                 new_word.append(word.substr(i, j - i));
+    //                 i = j;
+    //                 if (word[i] == bigram.first[0] && i < word.size() - 1 && word[i + 1] == bigram.second[0]) {
+    //                     new_word.append(bigram.first + bigram.second);
+    //                     i += 2;
+    //                 } else {
+    //                     new_word.push_back(word[i]);
+    //                     ++i;
+    //                 }
+    //             }
+    //             word = new_word;
+    //             if (word.size() == 1) {
+    //                 break;
+    //             } else {
+    //                 pairs = get_pairs(word);
+    //             }
+    //         }
+    //         cache[token] = word;
+    //         return word;
+    // }
 
-
+    
     std::vector<std::wstring> GPT2Tokenizer::tokenize(const std::wstring &text) const {
         std::vector<std::wstring> bpe_tokens;
-
-        return {};
+        // Tokenize the text
+        std::wsregex_token_iterator it(text.begin(), text.end(), pat, -1);
+        std::wsregex_token_iterator end;
+        
+        while(it != end){
+            bpe_tokens.push_back(*it);
+            ++it;
+        }
+        for(const auto &token : bpe_tokens) {
+            std::wcout << token << std::endl;
+        }
+        return bpe_tokens;
     }
 
     std::unordered_set<std::pair<char, char>, pair_hash> GPT2Tokenizer::get_pairs(const std::wstring& word){
@@ -271,6 +291,8 @@ namespace tokenizer{
         char prev_char = word[0];
         for (size_t i = 1; i < word.size(); ++i) {
             char current_char = word[i];
+
+
             pairs.insert(std::make_pair(prev_char, current_char));
             prev_char = current_char;
         }

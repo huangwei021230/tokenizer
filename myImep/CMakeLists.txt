@@ -28,11 +28,14 @@ add_executable(opt ${SOURCES})
 
 # 设置动态库导入库路径
 set(UTF8PROC_LIBRARY "${LINK_DIRS}/libutf8proc.so")
+# set(BOOST_REGEX_LIBRARY "${LINK_DIRS}/libboost_regex.so")
+
 MESSAGE(UTF8PROC_LIBRARY: ${UTF8PROC_LIBRARY})
 
 
 
 # 链接静态库到目标
 target_link_libraries(opt PUBLIC ${UTF8PROC_LIBRARY})
+# target_link_libraries(opt PUBLIC ${BOOST_REGEX_LIBRARY})
 #endif()
 

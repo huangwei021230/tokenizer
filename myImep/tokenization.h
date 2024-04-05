@@ -15,8 +15,10 @@
 #include <unordered_set>
 #include <memory>
 // #include <boost/algorithm/string.hpp>
+// #include <boost/regex.hpp>
 #include <utf8proc.h>
 #include <map>
+
 // hash for pair<char,char>
 struct pair_hash {
     inline std::size_t operator()(const std::pair<char,char> & v) const {
@@ -49,7 +51,7 @@ public:
             const std::wstring &pad_token = L"",
             const bool &add_prefix_space = false,
             const bool &add_bos_token = false);
-    std::vector<std::wstring> tokenize(const std::wstring &text) const;
+    std::vector<std::wstring> tokenize(const std::string &text) const;
     std::wstring bpe(const std::wstring &token);
     std::unordered_set<std::pair<char, char>, pair_hash> get_pairs(const std::wstring &word);
 private:
@@ -61,7 +63,7 @@ private:
     std::map<char, std::size_t> byte_decoder;
     std::map<std::vector<std::wstring>, std::size_t> bpe_ranks;
     std::unordered_map<std::wstring, std::wstring> cache;
-    std::wregex pat;
+    std::regex pat;
 };
 
 static std::wstring convertToUnicode(const std::string &text) {

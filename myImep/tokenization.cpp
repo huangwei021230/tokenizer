@@ -15,6 +15,7 @@
 #include <map>
 #include <locale>
 #include <codecvt>
+// #include <boost/regex.hpp>
 #define ll long long
 
 namespace tokenizer{
@@ -208,12 +209,9 @@ namespace tokenizer{
             bpe_ranks[bpe_merge_words[i]] = i;
         }
 
-        // for(auto & a : bpe_ranks) {
-        //     std::wcout << a.first[0] << " " << a.first[1] << " " << a.second << std::endl;
-        // }
 
-        // regex
-        std::wregex pat(L"'s|'t|'re|'ve|'m|'ll|'d| ?[[:alpha:]]+| ?[[:digit:]]+| ?[^\\s[:alpha:][:digit:]]+|\\s+(?!\\S)|\\s+");
+
+        pat = std::regex("'s|'t|'re|'ve|'m|'ll|'d| ?\\w+| ?\\d+| ?[^\\s\\w\\d]+|\\s+(?!\\S)|\\s+");
         
 
 
@@ -270,20 +268,26 @@ namespace tokenizer{
     // }
 
     
-    std::vector<std::wstring> GPT2Tokenizer::tokenize(const std::wstring &text) const {
+    std::vector<std::wstring> GPT2Tokenizer::tokenize(const std::string &text) const {;
+        std::string text_copy = text;
         std::vector<std::wstring> bpe_tokens;
         // Tokenize the text
-        std::wsregex_token_iterator it(text.begin(), text.end(), pat, -1);
-        std::wsregex_token_iterator end;
-        
-        while(it != end){
-            bpe_tokens.push_back(*it);
-            ++it;
-        }
-        for(const auto &token : bpe_tokens) {
-            std::wcout << token << std::endl;
+        // 创建用于存储匹配结果的迭代器
+        // Match results
+        std::smatch match;
+
+        // Search for matches in the text
+        std::string::const_iterator start = text_copy.begin();
+        std::string::const_iterator end = text_copy.end();
+        while (std::regex_search(start, end, match, pat)) {
+            // Update the start iterator to search for next match
+            std::string utf8_token = match.str();
+            bpe_tokens.push_back(convertToUnicode(utf8_token));
+            start = match[0].second;
         }
         return bpe_tokens;
+
+        
     }
 
     std::unordered_set<std::pair<char, char>, pair_hash> GPT2Tokenizer::get_pairs(const std::wstring& word){
@@ -291,8 +295,6 @@ namespace tokenizer{
         char prev_char = word[0];
         for (size_t i = 1; i < word.size(); ++i) {
             char current_char = word[i];
-
-
             pairs.insert(std::make_pair(prev_char, current_char));
             prev_char = current_char;
         }

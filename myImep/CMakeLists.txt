@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.4.1)
 project(OPT)
 
 set(CMAKE_CXX_STANDARD 17)
-
+set(CMAKE_CXX_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")
 set(LINK_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libs/x86_64_linux)
 set(UTF8PROC_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/headers/utf8proc)
 set(NLOHMANN_JSON_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/headers)
@@ -28,7 +28,8 @@ file(GLOB SOURCES "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c")
 MESSAGE(CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR})
 
 #if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
-add_executable(opt ${SOURCES})
+add_executable(opt ${SOURCES}
+        opt_infer_engine.cpp)
 
 # utf8proc libs
 set(UTF8PROC_LIBRARY "${LINK_DIRS}/libutf8proc.so")

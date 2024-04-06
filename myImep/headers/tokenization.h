@@ -59,6 +59,8 @@ public:
     std::vector<std::wstring> tokenize(const std::string &text) const;
     std::wstring bpe(const std::wstring &token);
     std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash>get_pairs(const std::vector<std::wstring>&word);
+    size_t getVocabId(const std::wstring &token);
+    std:: vector<size_t> convertTokensToIds(const std::vector<std::wstring> &tokens);
 private:
     std::shared_ptr<Vocab> encoder;
     std::shared_ptr<InvVocab> decoder;

@@ -214,7 +214,20 @@ namespace tokenizer{
         pat = std::regex("'s|'t|'re|'ve|'m|'ll|'d| ?\\w+| ?\\d+| ?[^\\s\\w\\d]+|\\s+(?!\\S)|\\s+");
         
     }
-
+    size_t GPT2Tokenizer::getVocabId(const std::wstring &token) {
+        auto it = (*encoder).find(token);
+        if(it != (*encoder).end()) {
+            return it->second;
+        } else {
+            auto unknown_it = (*encoder).find(L"<unk>");
+            if(it != (*encoder).end()) {
+                return unknown_it->second;
+            }else{
+                std::cerr << "Error: token not found in encoder" << std::endl;
+                exit(1);
+            }
+        }
+    }
     // std::wstring GPT2Tokenizer::bpe(const std::wstring &token){
     //     if(cache.find(token) != cache.end()) {
     //         return cache[token];
@@ -270,10 +283,8 @@ namespace tokenizer{
         std::string text_copy = text;
         std::vector<std::wstring> bpe_tokens;
         // Tokenize the text
-        // 创建用于存储匹配结果的迭代器
         // Match results
         std::smatch match;
-
         // Search for matches in the text
         std::string::const_iterator start = text_copy.begin();
         std::string::const_iterator end = text_copy.end();
@@ -295,9 +306,11 @@ namespace tokenizer{
             bpe_tokens.push_back(result.str());
             //TODO: bpe
         }
-
+        return bpe_tokens;
+    }
+    std::vector<size_t> GPT2Tokenizer::convertTokensToIds(const std::vector<std::wstring> &tokens) {
         std::vector<size_t> token_ids;
-        for(const auto &token : bpe_tokens) {
+        for(const auto &token : tokens) {
             auto it = (*encoder).find(token);
             if(it != (*encoder).end()) {
                 token_ids.push_back(it->second);
@@ -314,9 +327,8 @@ namespace tokenizer{
         for(const auto &id : token_ids) {
             std::cout << id << std::endl;
         }
-        return bpe_tokens;
+        return token_ids;
     }
-
     std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash> GPT2Tokenizer::get_pairs(const std::vector<std::wstring>& words){
         std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash> pairs;
         for(size_t i = 1; i < words.size(); ++i) {
@@ -324,6 +336,7 @@ namespace tokenizer{
         }
         return pairs;
     }
+
 
 
 }

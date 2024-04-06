@@ -125,8 +125,8 @@ namespace tokenizer{
 
 
     GPT2Tokenizer::GPT2Tokenizer(
-            const std::wstring &vocab_file,
-            const std::wstring &merges_file,
+            const std::string &vocab_file,
+            const std::string &merges_file,
             const size_t &vocab_size,
             const size_t &n_special,
             const std::wstring &unk_token,
@@ -135,8 +135,6 @@ namespace tokenizer{
             const std::wstring &pad_token,
             const bool &add_prefix_space,
             const bool &add_bos_token){
-
-        
         // initialize encoder and decoder
         std::filesystem::path absolute_path = std::filesystem::absolute(vocab_file);
         std::ifstream file(absolute_path);
@@ -153,10 +151,12 @@ namespace tokenizer{
             exit(1);
         }
         file.close();
-
-        encoder = j;
-        for(const auto &[key, value] : encoder) {
-            decoder[value] = key;
+        encoder = std::make_shared<Vocab>();
+        decoder = std::make_shared<InvVocab>();
+        for(const auto &[key, value] : j.items()) {
+            std::wstring token = convertToUnicode(key);
+            (*encoder)[token] = value;
+            (*decoder)[value] = token;
         }
 
         // initialize byte encoder and decoder
@@ -207,65 +207,62 @@ namespace tokenizer{
         }
 
         for(int i = 0;i< bpe_merge_words.size(); ++i) {
-            bpe_ranks[bpe_merge_words[i]] = i;
+            bpe_ranks[std::make_pair(bpe_merge_words[i][0], bpe_merge_words[i][1])] = i;
         }
 
-
-
+        // regex pattern
         pat = std::regex("'s|'t|'re|'ve|'m|'ll|'d| ?\\w+| ?\\d+| ?[^\\s\\w\\d]+|\\s+(?!\\S)|\\s+");
         
-
-
-
     }
 
     // std::wstring GPT2Tokenizer::bpe(const std::wstring &token){
-    //         if(cache.find(token) != cache.end()) {
-    //             return cache[token];
+    //     if(cache.find(token) != cache.end()) {
+    //         return cache[token];
+    //     }
+    //     std::vector<std::wstring> word;
+        
+    //     for(auto &c : token) {
+    //         word.push_back(std::wstring(1, c));
+    //     }
+    //     auto pairs = get_pairs(word);
+    //     if(pairs.empty()) {
+    //         return token;
+    //     }
+    //     while (true) {
+    //         auto it = std::min_element(pairs.begin(), pairs.end(), [this](const auto& pair1, const auto& pair2) {
+    //             return bpe_ranks[pair1] < bpe_ranks[pair2];
+    //         });
+    //         auto bigram = *it;
+    //         if (bpe_ranks.find(make_pair(bigram.first, bigram.second)) == bpe_ranks.end()) {
+    //             break;
     //         }
-    //         std::vector<wchar_t> word;
-    //         for(auto &c : token) {
-    //             word.push_back(c);
-    //         }
-    //         auto pairs = get_pairs(word);
-    //         if(pairs.empty()) {
-    //             return token;
-    //         }
-    //         while (true) {
-    //             auto it = std::min_element(pairs.begin(), pairs.end(), [this](const auto& pair1, const auto& pair2) {
-    //                 return bpe_ranks[pair1] < bpe_ranks[pair2];
-    //             });
-    //             auto bigram = *it;
-    //             if (bpe_ranks.find(bigram.first + bigram.second) == bpe_ranks.end()) {
+    //         std::string new_word;
+    //         size_t i = 0;
+    //         while (i < word.size()) {
+    //             auto j = word.find(bigram.first, i);
+    //             if (j == std::string::npos) {
+    //                 new_word.append(word.substr(i));
     //                 break;
     //             }
-    //             std::string new_word;
-    //             size_t i = 0;
-    //             while (i < word.size()) {
-    //                 auto j = word.find(bigram.first, i);
-    //                 if (j == std::string::npos) {
-    //                     new_word.append(word.substr(i));
-    //                     break;
-    //                 }
-    //                 new_word.append(word.substr(i, j - i));
-    //                 i = j;
-    //                 if (word[i] == bigram.first[0] && i < word.size() - 1 && word[i + 1] == bigram.second[0]) {
-    //                     new_word.append(bigram.first + bigram.second);
-    //                     i += 2;
-    //                 } else {
-    //                     new_word.push_back(word[i]);
-    //                     ++i;
-    //                 }
-    //             }
-    //             word = new_word;
-    //             if (word.size() == 1) {
-    //                 break;
+    //             new_word.append(word.substr(i, j - i));
+    //             i = j;
+    //             if (word[i] == bigram.first[0] && i < word.size() - 1 && word[i + 1] == bigram.second[0]) {
+    //                 new_word.append(bigram.first + bigram.second);
+    //                 i += 2;
     //             } else {
-    //                 pairs = get_pairs(word);
+    //                 new_word.push_back(word[i]);
+    //                 ++i;
     //             }
     //         }
-    //         cache[token] = word;
-    //         return word;
+    //         word = new_word;
+    //         if (word.size() == 1) {
+    //             break;
+    //         } else {
+    //             pairs = get_pairs(word);
+    //         }
+    //     }
+    //     cache[token] = word;
+    //     return word;
     // }
 
     
@@ -295,22 +292,35 @@ namespace tokenizer{
                     result << static_cast<wchar_t>(c);
                 }
             }
-            std::cout << convertFromUnicode(result.str()) << std::endl;
+            bpe_tokens.push_back(result.str());
+            //TODO: bpe
         }
 
-        
+        std::vector<size_t> token_ids;
+        for(const auto &token : bpe_tokens) {
+            auto it = (*encoder).find(token);
+            if(it != (*encoder).end()) {
+                token_ids.push_back(it->second);
+            } else {
+                auto unknown_it = (*encoder).find(L"<unk>");
+                if(it != (*encoder).end()) {
+                    token_ids.push_back(unknown_it->second);
+                }else{
+                    std::cerr << "Error: token not found in encoder" << std::endl;
+                    exit(1);
+                }
+            }
+        }
+        for(const auto &id : token_ids) {
+            std::cout << id << std::endl;
+        }
         return bpe_tokens;
-
-
     }
 
-    std::unordered_set<std::pair<char, char>, pair_hash> GPT2Tokenizer::get_pairs(const std::wstring& word){
-        std::unordered_set<std::pair<char, char>, pair_hash> pairs;
-        char prev_char = word[0];
-        for (size_t i = 1; i < word.size(); ++i) {
-            char current_char = word[i];
-            pairs.insert(std::make_pair(prev_char, current_char));
-            prev_char = current_char;
+    std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash> GPT2Tokenizer::get_pairs(const std::vector<std::wstring>& words){
+        std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash> pairs;
+        for(size_t i = 1; i < words.size(); ++i) {
+            pairs.insert(std::make_pair(words[i - 1], words[i]));
         }
         return pairs;
     }

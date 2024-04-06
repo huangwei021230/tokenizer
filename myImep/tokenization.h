@@ -21,8 +21,13 @@
 
 // hash for pair<char,char>
 struct pair_hash {
-    inline std::size_t operator()(const std::pair<char,char> & v) const {
-        return v.first*31+v.second;
+    inline std::size_t operator()(const std::pair<std::wstring, std::wstring>& p) const {
+        // 使用 std::hash 计算哈希值
+        std::size_t hash1 = std::hash<std::wstring>{}(p.first);
+        std::size_t hash2 = std::hash<std::wstring>{}(p.second);
+        
+        // 结合哈希值
+        return hash1 ^ (hash2 << 1);
     }
 };
 // strings
@@ -41,8 +46,8 @@ static std::vector<std::wstring> split(const std::wstring &text);
 class GPT2Tokenizer {
 public:
     GPT2Tokenizer(
-            const std::wstring &vocab_file,
-            const std::wstring &merges_file,
+            const std::string &vocab_file,
+            const std::string &merges_file,
             const size_t &vocab_size,
             const size_t &n_special,
             const std::wstring &unk_token,
@@ -53,15 +58,13 @@ public:
             const bool &add_bos_token = false);
     std::vector<std::wstring> tokenize(const std::string &text) const;
     std::wstring bpe(const std::wstring &token);
-    std::unordered_set<std::pair<char, char>, pair_hash> get_pairs(const std::wstring &word);
+    std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash>get_pairs(const std::vector<std::wstring>&word);
 private:
-    std::shared_ptr<Vocab> mVocab;
-    std::shared_ptr<InvVocab> mInvVocab;
-    std::map<std::string, std::size_t> encoder;
-    std::map<std::size_t , std::string> decoder;
+    std::shared_ptr<Vocab> encoder;
+    std::shared_ptr<InvVocab> decoder;
     std::map<std::size_t, wchar_t> byte_encoder;
     std::map<wchar_t, std::size_t> byte_decoder;
-    std::map<std::vector<std::wstring>, std::size_t> bpe_ranks;
+    std::map<std::pair<std::wstring,std::wstring>, std::size_t> bpe_ranks;
     std::unordered_map<std::wstring, std::wstring> cache;
     std::regex pat;
 };

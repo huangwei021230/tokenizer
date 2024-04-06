@@ -1,24 +1,27 @@
+# the minimum version of CMake.
 cmake_minimum_required(VERSION 3.4.1)
 project(OPT)
 
 set(CMAKE_CXX_STANDARD 17)
 
-
-
 set(LINK_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libs/x86_64_linux)
-set(UTF8PROC_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/include/utf8proc)
-set(NLOHMANN_JSON_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(PYTORCH_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/include/torch/include)
+set(UTF8PROC_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/headers/utf8proc)
+set(NLOHMANN_JSON_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/headers)
+set(PYTORCH_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/headers/pytorch)
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/headers
+        ${PYTORCH_INCLUDE_PATH}/include
+        ${PYTORCH_INCLUDE_PATH}/include/torch/csrc/api/include
         ${UTF8PROC_INCLUDE_PATH}
         ${NLOHMANN_JSON_INCLUDE_PATH}
-        ${PYTORCH_INCLUDE_PATH}
-        ${PYTORCH_INCLUDE_PATH}/torch/csrc/api/include)
+)
+
+message(${PYTORCH_INCLUDE_PATH}/include)
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-file(GLOB SOURCES ${SOURCE_DIR}/*.cpp "${SOURCE_DIR}/*.c")
+file(GLOB SOURCES "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c")
 
 
 

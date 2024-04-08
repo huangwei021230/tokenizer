@@ -1,6 +1,6 @@
 //#pragma once
 
-#include <opt_preprocessor.h>
+#include <opt_processor.h>
 #include <torch/script.h>
 #include <torch/torch.h>
 
@@ -12,6 +12,6 @@ public:
 private:
     void loadModel(const std::string& opt_model_path);
     torch::jit::script::Module opt_model_;
-    OptPreprocessor preprocessor_;
+    OptProcessor processor_;
 };
 }

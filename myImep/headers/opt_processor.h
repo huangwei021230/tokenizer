@@ -6,12 +6,11 @@
 #include <tokenization.h>
 
 namespace OPT {
-class OptPreprocessor {
+class OptProcessor {
 public:
-    OptPreprocessor(const std::string &vocab_file, const std::string &merges_file);
+    OptProcessor(const std::string &vocab_file, const std::string &merges_file);
     torch::Tensor preprocessText(const std::string &text);
-
-    constexpr static int text_length = 52;
+    std::vector<std::string> getReturnString(torch::Tensor tensor);
 
 private:
    std::unique_ptr<tokenizer::GPT2Tokenizer> tokenizer_;

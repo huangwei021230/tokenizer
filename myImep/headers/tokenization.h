@@ -61,6 +61,7 @@ public:
     std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash>get_pairs(const std::vector<std::wstring>&word);
     size_t getVocabId(const std::wstring &token);
     std:: vector<size_t> convertTokensToIds(const std::vector<std::wstring> &tokens);
+    std::vector<std::string> convertIdsToTokens(const std::vector<size_t> &ids);
 private:
     std::shared_ptr<Vocab> encoder;
     std::shared_ptr<InvVocab> decoder;

@@ -29,7 +29,8 @@ MESSAGE(CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR})
 
 #if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
 add_executable(opt ${SOURCES}
-        opt_infer_engine.cpp)
+        opt_infer_engine.cpp
+)
 
 # utf8proc libs
 set(UTF8PROC_LIBRARY "${LINK_DIRS}/libutf8proc.so")

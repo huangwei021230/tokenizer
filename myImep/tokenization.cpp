@@ -324,9 +324,6 @@ namespace tokenizer{
                 }
             }
         }
-        for(const auto &id : token_ids) {
-            std::cout << id << std::endl;
-        }
         return token_ids;
     }
     std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash> GPT2Tokenizer::get_pairs(const std::vector<std::wstring>& words){
@@ -337,6 +334,37 @@ namespace tokenizer{
         return pairs;
     }
 
+    std::vector<std::string> GPT2Tokenizer::convertIdsToTokens(const std::vector<size_t> &ids) {
+        std::vector<std::string> tokens;
+        for(const auto &id : ids) {
+            auto it = (*decoder).find(id);
+            if(it != (*decoder).end()) {
+                std::stringstream result;
+                std::wstring unicode_token = it->second;
+                for (wchar_t c : unicode_token) {
+                    if (byte_decoder.find(c) != byte_decoder.end()) {
+                        auto iter = byte_decoder.find(static_cast<wchar_t>(c));
+                        result << static_cast<char>(iter->second);
+                    }
+                    else
+                    {
+                        result << static_cast<char>(c);
+                    }
+                }
+                tokens.push_back(result.str());
+
+            } else {
+                auto unknown_it = (*decoder).find(0);
+                if(it != (*decoder).end()) {
+                    tokens.push_back(convertFromUnicode(unknown_it->second));
+                }else{
+                    std::cerr << "Error: token not found in decoder" << std::endl;
+                    exit(1);
+                }
+            }
+        }
+        return tokens;
+    }
 
 
 }

@@ -30,6 +30,9 @@ struct pair_hash {
         return hash1 ^ (hash2 << 1);
     }
 };
+
+
+
 // strings
 const std::wstring stripChar = L" \t\n\r\f\v";
 
@@ -38,7 +41,8 @@ using Vocab = std::unordered_map<std::wstring, size_t>;
 using InvVocab = std::unordered_map<size_t , std::wstring>;
 
 namespace tokenizer {
-
+    using BPE = std::pair<std::wstring, std::wstring>;
+    using BPERanks = std::unordered_map<BPE, std::size_t, pair_hash>;
 
 static std::vector<std::wstring> split(const std::wstring &text);
 
@@ -56,9 +60,9 @@ public:
             const std::wstring &pad_token = L"",
             const bool &add_prefix_space = false,
             const bool &add_bos_token = false);
-    std::vector<std::wstring> tokenize(const std::string &text) const;
-    std::wstring bpe(const std::wstring &token);
-    std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash>get_pairs(const std::vector<std::wstring>&word);
+    std::vector<std::wstring> tokenize(const std::string &text);
+    std::vector<std::wstring> bpe(const std::wstring &token);
+    std::unordered_set<std::pair<std::wstring, std::wstring>, pair_hash> get_pairs(const std::vector<std::wstring>&word);
     size_t getVocabId(const std::wstring &token);
     std:: vector<size_t> convertTokensToIds(const std::vector<std::wstring> &tokens);
     std::vector<std::string> convertIdsToTokens(const std::vector<size_t> &ids);
@@ -67,7 +71,7 @@ private:
     std::shared_ptr<InvVocab> decoder;
     std::map<std::size_t, wchar_t> byte_encoder;
     std::map<wchar_t, std::size_t> byte_decoder;
-    std::map<std::pair<std::wstring,std::wstring>, std::size_t> bpe_ranks;
+    BPERanks m_bpe_ranks;
     std::unordered_map<std::wstring, std::wstring> cache;
     std::regex pat;
 };

@@ -20,6 +20,10 @@
 #define ll long long
 
 namespace tokenizer{
+
+
+
+
     const std::unordered_map<std::wstring, std::wstring> VOCAB_FILES_NAMES = {
             {L"vocab_file",  L"vocab.json"},
             {L"merges_file", L"merges.txt"},
@@ -122,7 +126,12 @@ namespace tokenizer{
         return vocab;
     }
 
-
+    size_t codepoint_length(const char c) {
+        if((c & 0xf8) == 0xf0) return 4;
+        else if((c & 0xf0) == 0xe0) return 3;
+        else if((c & 0xe0) == 0xc0) return 2;
+        else return 1;
+    }
 
     GPT2Tokenizer::GPT2Tokenizer(
             const std::string &vocab_file,
@@ -207,7 +216,7 @@ namespace tokenizer{
         }
 
         for(int i = 0;i< bpe_merge_words.size(); ++i) {
-            bpe_ranks[std::make_pair(bpe_merge_words[i][0], bpe_merge_words[i][1])] = i;
+            m_bpe_ranks[std::make_pair(bpe_merge_words[i][0], bpe_merge_words[i][1])] = i;
         }
 
         // regex pattern
@@ -228,58 +237,88 @@ namespace tokenizer{
             }
         }
     }
-    // std::wstring GPT2Tokenizer::bpe(const std::wstring &token){
-    //     if(cache.find(token) != cache.end()) {
-    //         return cache[token];
-    //     }
-    //     std::vector<std::wstring> word;
-        
-    //     for(auto &c : token) {
-    //         word.push_back(std::wstring(1, c));
-    //     }
-    //     auto pairs = get_pairs(word);
-    //     if(pairs.empty()) {
-    //         return token;
-    //     }
-    //     while (true) {
-    //         auto it = std::min_element(pairs.begin(), pairs.end(), [this](const auto& pair1, const auto& pair2) {
-    //             return bpe_ranks[pair1] < bpe_ranks[pair2];
-    //         });
-    //         auto bigram = *it;
-    //         if (bpe_ranks.find(make_pair(bigram.first, bigram.second)) == bpe_ranks.end()) {
-    //             break;
-    //         }
-    //         std::string new_word;
-    //         size_t i = 0;
-    //         while (i < word.size()) {
-    //             auto j = word.find(bigram.first, i);
-    //             if (j == std::string::npos) {
-    //                 new_word.append(word.substr(i));
-    //                 break;
-    //             }
-    //             new_word.append(word.substr(i, j - i));
-    //             i = j;
-    //             if (word[i] == bigram.first[0] && i < word.size() - 1 && word[i + 1] == bigram.second[0]) {
-    //                 new_word.append(bigram.first + bigram.second);
-    //                 i += 2;
-    //             } else {
-    //                 new_word.push_back(word[i]);
-    //                 ++i;
-    //             }
-    //         }
-    //         word = new_word;
-    //         if (word.size() == 1) {
-    //             break;
-    //         } else {
-    //             pairs = get_pairs(word);
-    //         }
-    //     }
-    //     cache[token] = word;
-    //     return word;
-    // }
+    std::vector<std::wstring> GPT2Tokenizer::bpe(const std::wstring &token) {
+
+        std::vector<BPERanks::const_iterator> ranks;
+        std::vector<std::wstring> word;
+        ranks.reserve(token.size()-1);
+        word.reserve(token.size());
+
+        {
+            size_t i = 0;
+            while (true) {
+                int length = codepoint_length(token[i]);
+                int next_length = codepoint_length(token[i+length]);
+                ranks.push_back(
+                        m_bpe_ranks.find({token.substr(i,length), token.substr(i+length,next_length)})
+                );
+                word.push_back(token.substr(i,length));
+                i+=length;
+                if (i >= token.size()) break;
+                if (i+next_length >= token.size()) {
+                    word.emplace_back(token.substr(i,next_length));
+                    break;
+                }
+            }
+        }
+
+
+
+        while (true) {
+            const auto bigram = std::min_element(ranks.begin(), ranks.end(),
+                                                 [this](const auto& lhs, const auto& rhs) -> bool {
+                                                     if (lhs == m_bpe_ranks.end() && lhs == m_bpe_ranks.end()) {
+                                                         return false;
+                                                     }
+                                                     else if (lhs == m_bpe_ranks.end() || rhs == m_bpe_ranks.end()) {
+                                                         return (lhs != m_bpe_ranks.end());
+                                                     }
+                                                     else {
+                                                         return lhs->second < rhs->second;
+                                                     }
+                                                 });
+            if (*bigram == m_bpe_ranks.end()) {
+                // could not find any matches in ranks
+                break;
+            }
+            const auto [first, second] = (*bigram)->first;
+            std::vector<std::wstring> new_word;
+
+            size_t i = 0;
+            while (i < word.size()) {
+                const auto wordIterator = std::find(word.begin() + i, word.end(), first);
+                if (wordIterator == word.end()) {
+                    std::copy(word.begin() + i, word.end(), std::back_inserter(new_word));
+                    break;
+                }
+
+                std::copy(word.begin() + i, wordIterator, std::back_inserter(new_word));
+                i = std::distance(word.begin(), wordIterator);
+
+                if (word[i] == first && i < word.size() -1 && word[i+1] == second) {
+                    new_word.push_back(first + second);
+                    i += 2;
+                } else {
+                    new_word.push_back(word[i]);
+                    i += 1;
+                }
+            }
+            word = std::move(new_word);
+            if (word.size() == 1) break;
+            else {
+                for (size_t i = 0; i < word.size()-1; ++i) {
+                    ranks[i] = m_bpe_ranks.find({word[i], word[i+1]});
+                }
+                ranks.resize(word.size()-1);
+            }
+        }
+
+        return word;
+    }
+
 
     
-    std::vector<std::wstring> GPT2Tokenizer::tokenize(const std::string &text) const {;
+    std::vector<std::wstring> GPT2Tokenizer::tokenize(const std::string &text) {;
         std::string text_copy = text;
         std::vector<std::wstring> bpe_tokens;
         // Tokenize the text
@@ -303,7 +342,9 @@ namespace tokenizer{
                     result << static_cast<wchar_t>(c);
                 }
             }
-            bpe_tokens.push_back(result.str());
+            std::vector<std::wstring> bpe_token = bpe(result.str());
+            bpe_tokens.reserve(bpe_tokens.size() + bpe_token.size());
+            bpe_tokens.insert(bpe_tokens.end(), bpe_token.begin(), bpe_token.end());
             //TODO: bpe
         }
         return bpe_tokens;
